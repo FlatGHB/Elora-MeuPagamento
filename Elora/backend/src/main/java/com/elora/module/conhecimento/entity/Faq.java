@@ -1,14 +1,19 @@
-@Entity @Table (name="faq")
+package com.elora.module.conhecimento.entity;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDateTime;
+@Entity @Table(name = "faq")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Faq extends BaseEntity{
-    @Id @GeneratedValue(IDENTITY) @Column(name="id_faq") Long idFaq;
-    @Column(nullable=false, columnDefinition="TEXT") String pergunta;
-    @Column(nullable=false, ColumnDefinition="TEXT") String resposta;
-    @Column(length=100) String categoria;
-    @Column(length=50) String status;
-
-    @ManyToOne(fetch=LAZY) @JoinColumn(name="categoria_id") CategoriaConteudo CategoriaConteudo;
-    public void cadastrarPergunta(){this.status="RASCUNHO";}
-    public void atualizarResposta(String r){this.resposta=r;}
-    public void publicarFaq(){this.status="PUBLICADO";}
+public class Faq {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) @Column(name = "id_faq") private Integer id;
+    @Column(nullable = false, columnDefinition = "TEXT") private String pergunta;
+    @Column(nullable = false, columnDefinition = "TEXT") private String resposta;
+    @Column(length = 100) private String categoria;
+    @Column(length = 50) private String status = "rascunho";
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "categoria_id") private CategoriaConteudo categoriaRef;
+    @CreationTimestamp @Column(name = "criado_em", updatable = false) private LocalDateTime criadoEm;
+    public void cadastrarPergunta() { this.status = "rascunho"; }
+    public void atualizarResposta(String r) { this.resposta = r; }
+    public void publicarFaq() { this.status = "publicado"; }
 }
