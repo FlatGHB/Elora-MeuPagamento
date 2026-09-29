@@ -91,7 +91,7 @@ class ContratoFlowTest {
 
     @Test
     void transicaoInvalida() {
-        ContratoResponse c = contratoService.criar(clienteId, novoContrato(), null);
+        ContratoResponse c = contratoService.criar(clienteId, novoContrato(), "127.0.0.1");
         AtualizarStatusRequest pulo = new AtualizarStatusRequest();
         pulo.setStatus(StatusContrato.ativo);
         assertThrows(BusinessException.class,
@@ -100,7 +100,7 @@ class ContratoFlowTest {
 
     @Test
     void escopo() {
-        ContratoResponse c = contratoService.criar(clienteId, novoContrato(), null);
+        ContratoResponse c = contratoService.criar(clienteId, novoContrato(), "127.0.0.1");
         assertThrows(ResourceNotFoundException.class,
                 () -> contratoService.buscarPorId(outroClienteId, c.getId()));
         assertTrue(contratoService.meusContratos(outroClienteId, null).isEmpty());
@@ -109,11 +109,11 @@ class ContratoFlowTest {
 
     @Test
     void excluirSoRascunho() {
-        ContratoResponse rascunho = contratoService.criar(clienteId, novoContrato(), null);
+        ContratoResponse rascunho = contratoService.criar(clienteId, novoContrato(), "127.0.0.1");
         avancar(clienteId, rascunho.getId(), StatusContrato.proposta);
         assertThrows(BusinessException.class,
                 () -> contratoService.excluir(clienteId, rascunho.getId(), null));
-        ContratoResponse outro = contratoService.criar(clienteId, novoContrato(), null);
+        ContratoResponse outro = contratoService.criar(clienteId, novoContrato(), "127.0.0.1");
         contratoService.excluir(clienteId, outro.getId(), null);
         assertThrows(ResourceNotFoundException.class,
                 () -> contratoService.buscarPorId(clienteId, outro.getId()));
@@ -123,21 +123,21 @@ class ContratoFlowTest {
     void criacaoInvalida() {
         CriarContratoRequest mesmo = novoContrato();
         mesmo.setProfissionalId(clienteId);
-        assertThrows(BusinessException.class, () -> contratoService.criar(clienteId, mesmo, null));
+        assertThrows(BusinessException.class, () -> contratoService.criar(clienteId, mesmo, "127.0.0.1"));
 
         CriarContratoRequest semPerfil = novoContrato();
         semPerfil.setProfissionalId(outroClienteId);
-        assertThrows(BusinessException.class, () -> contratoService.criar(clienteId, semPerfil, null));
+        assertThrows(BusinessException.class, () -> contratoService.criar(clienteId, semPerfil, "127.0.0.1"));
 
         CriarContratoRequest datas = novoContrato();
         datas.setDataInicio(java.time.LocalDate.of(2026, 12, 10));
         datas.setDataFim(java.time.LocalDate.of(2026, 12, 1));
-        assertThrows(BusinessException.class, () -> contratoService.criar(clienteId, datas, null));
+        assertThrows(BusinessException.class, () -> contratoService.criar(clienteId, datas, "127.0.0.1"));
     }
 
     @Test
     void assinaturaDuplicadaEForaDeHora() {
-        ContratoResponse c = contratoService.criar(clienteId, novoContrato(), null);
+        ContratoResponse c = contratoService.criar(clienteId, novoContrato(), "127.0.0.1");
         assertThrows(BusinessException.class, () -> contratoService.assinar(clienteId, c.getId(), null));
         avancar(clienteId, c.getId(), StatusContrato.proposta);
         avancar(clienteId, c.getId(), StatusContrato.negociacao);

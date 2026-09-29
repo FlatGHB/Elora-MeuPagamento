@@ -16,7 +16,7 @@ import com.elora.module.escala.entity.EscalaTrabalho;
 import com.elora.module.escala.enums.PeriodoTurno;
 import com.elora.module.escala.enums.StatusDisponibilidade;
 import com.elora.module.escala.enums.StatusEscala;
-import com.elora.module.escala.repository.DisponibilidadeRepository;
+import com.elora.module.escala.repository.EscalaDisponibilidadeRepository;
 import com.elora.module.escala.repository.EscalaTrabalhoRepository;
 import com.elora.module.notificacao.service.NotificacaoService;
 import com.elora.module.usuario.service.UsuarioService;
@@ -41,7 +41,7 @@ public class EscalaService {
     private static final Set<String> FINANCEIRO = Set.of("admin", "financeiro");
 
     private final EscalaTrabalhoRepository escalas;
-    private final DisponibilidadeRepository disponibilidades;
+    private final EscalaDisponibilidadeRepository disponibilidades;
     private final ContratoRepository contratos;
     private final UsuarioService usuarioService;
     private final NotificacaoService notificacoes;

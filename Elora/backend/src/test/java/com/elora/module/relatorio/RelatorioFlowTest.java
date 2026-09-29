@@ -60,15 +60,13 @@ class RelatorioFlowTest {
                 + "valor DECIMAL(12,2), status VARCHAR(20))");
         jdbc.execute("CREATE TABLE IF NOT EXISTS contrato (id_contrato INT AUTO_INCREMENT PRIMARY KEY, "
                 + "status VARCHAR(20), valor_hora DECIMAL(10,2), criado_em DATETIME)");
-        jdbc.execute("CREATE TABLE IF NOT EXISTS avaliacao (id_avaliacao INT AUTO_INCREMENT PRIMARY KEY, nota INT)");
         jdbc.execute("CREATE TABLE IF NOT EXISTS denuncia (id_denuncia INT AUTO_INCREMENT PRIMARY KEY, status VARCHAR(20))");
         // DDL do H2 não sofre rollback: limpa para cada teste ser isolado.
-        jdbc.execute("DELETE FROM pagamento");
-        jdbc.execute("DELETE FROM repasse");
-        jdbc.execute("DELETE FROM contrato");
         jdbc.execute("DELETE FROM avaliacao");
+        jdbc.execute("DELETE FROM repasse");
+        jdbc.execute("DELETE FROM pagamento");
+        jdbc.execute("DELETE FROM contrato");
         jdbc.execute("DELETE FROM denuncia");
-
         perfil("cliente");
         perfil("admin");
         clienteId = usuarioService.registerCliente(cadastro("cli@teste.com", "52998224725")).getId();
@@ -89,8 +87,21 @@ class RelatorioFlowTest {
                 + " VALUES (" + cid + ", " + clienteId + ", 200.00, 20.00, 180.00, 'cartao', 'pendente', 'rel-2', DATEADD('DAY', -40, CURRENT_TIMESTAMP), DATEADD('DAY', -40, CURRENT_TIMESTAMP))");
         Integer pid = jdbc.queryForObject("SELECT id_pagamento FROM pagamento WHERE idempotency_key = 'rel-1'", Integer.class);
         jdbc.update("INSERT INTO repasse (pagamento_id, profissional_id, valor, status) VALUES (" + pid + ", " + adminId + ", 90.00, 'pendente')");
-        jdbc.update("INSERT INTO avaliacao (nota) VALUES (5)");
-        jdbc.update("INSERT INTO avaliacao (nota) VALUES (3)");
+        jdbc.update("""
+            INSERT INTO avaliacao (
+                contrato_id,
+                avaliador_id,
+                avaliado_id,
+                nota,
+                criado_em
+            )
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            cid,
+            clienteId,
+            adminId,
+            5
+        );
         jdbc.update("INSERT INTO denuncia (status) VALUES ('aberta')");
     }
 
@@ -137,7 +148,7 @@ class RelatorioFlowTest {
     @Test
     void demaisRelatorios() {
         assertEquals(1, relatorioService.contratos(adminId, null, null).getTotal());
-        assertEquals(2, relatorioService.avaliacoes(adminId).getTotal());
+        assertEquals(1, relatorioService.avaliacoes(adminId).getTotal());
         assertEquals(1, relatorioService.denuncias(adminId).getTotal());
         assertEquals(2, relatorioService.usuarios(adminId, null, null).getTotal());
     }
