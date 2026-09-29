@@ -1,6 +1,6 @@
 package com.elora.module.profissional.service;
 import com.elora.common.exception.*; import com.elora.module.profissional.dto.*;
-import com.elora.module.profissional.entity.*; import com.elora.module.profissional.mapper.ProfissionalMapper;
+import com.elora.module.profissional.entity.*; import com.elora.module.profissional.enums.Periodo; import com.elora.module.profissional.mapper.ProfissionalMapper;
 import com.elora.module.usuario.entity.Usuario;
 import com.elora.module.profissional.enums.Periodo;
 import com.elora.module.profissional.repository.*; import com.elora.module.usuario.entity.ProfissionalDetalhes;
@@ -75,13 +75,14 @@ public class ProfissionalService {
       .map(d-> getById(d.getUsuarioId())).toList();
   }
 
-  @Transactional
-  public DocumentoProfissional uploadDocumento(Integer profId, String tipo, String url){
-    getProfissional(profId);
-    var doc=new DocumentoProfissional(); doc.setUsuarioId(profId);
-    doc.setTipo(tipo); doc.setArquivoUrl(url);
-    return docsRepo.save(doc);
-  }
+public DocumentoProfissional uploadDocumento(Integer profId, String tipo, String url){
+  getProfissional(profId);
+  if(tipo==null||tipo.isBlank()||url==null||url.isBlank()) throw new BusinessException("tipo e arquivoUrl obrigatórios");
+  var doc=new DocumentoProfissional(); doc.setUsuarioId(profId);
+  doc.setTipo(tipo); doc.setArquivoUrl(url);
+  doc.setStatus(com.elora.module.profissional.enums.DocumentoStatus.pendente);
+  return docsRepo.save(doc);
+}
 
   @Transactional
   public ProfissionalResponse validar(Integer profId, Integer validadorId, ValidacaoRequest req){
@@ -102,13 +103,16 @@ public class ProfissionalService {
   }
 
   @Transactional public void salvarDisponibilidade(Integer profId, List<Map<String,String>> body){
-    dispRepo.deleteByUsuarioId(profId);
-    for(var p: body){
-      var disp=new Disponibilidade(); disp.setUsuarioId(profId);
-      disp.setData(java.time.LocalDate.parse(p.get("data")));
-      disp.setPeriodo(Periodo.valueOf(p.get("periodo"))); // matutino/vespertino/noturno
-      dispRepo.save(disp);
-    }
+  dispRepo.deleteByUsuarioId(profId);
+  for(var p: body){
+    var disp=new Disponibilidade(); disp.setUsuarioId(profId);
+    java.time.LocalDate data;
+    try{data=java.time.LocalDate.parse(p.get("data"));}catch(Exception e){throw new BusinessException("data inválida, use yyyy-MM-dd");}
+    if(data.isBefore(java.time.LocalDate.now())) throw new BusinessException("data no passado");
+    disp.setData(data);
+    try{disp.setPeriodo(Periodo.valueOf(p.get("periodo").toLowerCase().trim()));}catch(Exception e){throw new BusinessException("periodo use: matutino|vespertino|noturno");}
+    dispRepo.save(disp);
   }
+}
   @Transactional(readOnly=true) public List<Disponibilidade> getDisponibilidade(Integer profId){ return dispRepo.findByUsuarioId(profId); }
 }

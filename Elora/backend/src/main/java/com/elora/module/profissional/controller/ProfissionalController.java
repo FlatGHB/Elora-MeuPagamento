@@ -4,6 +4,8 @@ import com.elora.security.SecurityUtils; import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor; import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
+import lombok.RequiredArgsConstructor; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/caregivers") @RequiredArgsConstructor
 public class ProfissionalController {
@@ -25,9 +27,10 @@ public class ProfissionalController {
   public ApiResponse<DocumentoProfissional> upload(@PathVariable Integer id, @RequestBody Map<String,String> body){
     return ApiResponse.ok(service.uploadDocumento(id, body.get("tipo"), body.get("arquivoUrl")));
   }
-  @PatchMapping("/{id}/validacao") // só moderador/juridico/admin - validar via @PreAuthorize
-  public ApiResponse<ProfissionalResponse> validar(@PathVariable Integer id, @Valid @RequestBody ValidacaoRequest req, Authentication auth){
-    return ApiResponse.ok(service.validar(id, SecurityUtils.currentUserId(auth), req));
+  @PatchMapping("/{id}/validacao")
+@PreAuthorize("hasAnyRole('ADMIN','MODERADOR','JURIDICO')")
+public ApiResponse<ProfissionalResponse> validar(@PathVariable Integer id, @Valid @RequestBody ValidacaoRequest req, Authentication auth){
+  return ApiResponse.ok(service.validar(id, SecurityUtils.currentUserId(auth), req));
   }
   @PutMapping("/me/disponibilidade")
   public ApiResponse<String> setDisp(@RequestBody List<Map<String,String>> body, Authentication auth){

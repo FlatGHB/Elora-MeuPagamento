@@ -1,4 +1,5 @@
 package com.elora.module.conhecimento.dto;
+<<<<<<< HEAD
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -25,3 +26,15 @@ public class TutorialRequest {
 
     private Integer categoriaId;
 }
+=======
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class TutorialRequest {
+    @NotBlank private String titulo;
+    private String descricao;
+    private String linkConteudo;
+    private String status;
+    private Integer categoriaId;
+}
+>>>>>>> upstream/testes

@@ -1,4 +1,5 @@
 package com.elora.module.conhecimento.dto;
+<<<<<<< HEAD
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -19,3 +20,13 @@ public class CategoriaRequest {
 
     private String descricao;
 }
+=======
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class CategoriaRequest {
+    @NotBlank @Size(max=80) private String nome;
+    private String descricao;
+}
+>>>>>>> upstream/testes
