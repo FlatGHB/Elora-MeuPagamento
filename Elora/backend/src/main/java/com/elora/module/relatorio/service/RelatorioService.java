@@ -29,8 +29,8 @@ import java.util.Set;
  * de entities JPA. As tabelas (contrato, pagamento, avaliacao, denuncia...)
  * pertencem aos módulos futuros — mapear aqui duplicaria a posse e qualquer
  * divergência quebraria o {@code validate} no startup. Leitura não altera o banco.
- * RowMappers posicionais (índice, não nome de coluna) funcionam igual em
- * MySQL e H2.
+ * RowMappers posicionais (índice, não nome de coluna) e SQL padrão funcionam
+ * igual em PostgreSQL (Neon), MySQL e H2.
  */
 @Service
 @RequiredArgsConstructor
@@ -131,7 +131,7 @@ public class RelatorioService {
     }
 
     // ------------------------------------------------------------------
-    // Fetch (SQL padrão, portée MySQL + H2)
+    // Fetch (SQL padrão, portável PostgreSQL/MySQL/H2)
     // ------------------------------------------------------------------
 
     record PagamentoRow(BigDecimal bruto, BigDecimal taxa, BigDecimal liquido, String metodo, String status) {

@@ -2,6 +2,8 @@ package com.elora.module.usuario.controller;
 
 import com.elora.module.usuario.dto.AuthResponse;
 import com.elora.module.usuario.dto.LoginRequest;
+import com.elora.module.usuario.dto.PasswordResetConfirm;
+import com.elora.module.usuario.dto.PasswordResetRequest;
 import com.elora.module.usuario.dto.RefreshRequest;
 import com.elora.module.usuario.dto.UsuarioResponse;
 import com.elora.module.usuario.service.AuthService;
@@ -40,5 +42,19 @@ public class AuthController {
     @GetMapping("/me")
     public UsuarioResponse me(Authentication authentication) {
         return authService.me(SecurityUtils.currentUserId(authentication));
+    }
+
+    /**
+     * REQ-ELO-002. Resposta sempre genérica (não revela se o identifier
+     * existe). Rota pública via {@code POST /auth/**} no SecurityConfig.
+     */
+    @PostMapping("/password/reset")
+    public void requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        authService.requestPasswordReset(request.getIdentifier());
+    }
+
+    @PostMapping("/password/confirm")
+    public void confirmPasswordReset(@Valid @RequestBody PasswordResetConfirm request) {
+        authService.confirmPasswordReset(request.getToken(), request.getNovaSenha());
     }
 }

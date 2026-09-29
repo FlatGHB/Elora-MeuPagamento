@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface SessaoRepository extends JpaRepository<Sessao, Integer> {
 
     Optional<Sessao> findByRefreshHashAndRevogadaFalse(String refreshHash);
+
+    void deleteByUsuario_Id(Integer usuarioId);
 }

@@ -6,9 +6,11 @@ import com.elora.common.util.DocumentUtils;
 import com.elora.module.usuario.dto.AuthResponse;
 import com.elora.module.usuario.dto.LoginRequest;
 import com.elora.module.usuario.dto.UsuarioResponse;
+import com.elora.module.usuario.entity.RedefinicaoSenha;
 import com.elora.module.usuario.entity.Sessao;
 import com.elora.module.usuario.entity.Usuario;
 import com.elora.module.usuario.enums.UsuarioStatus;
+import com.elora.module.usuario.repository.RedefinicaoSenhaRepository;
 import com.elora.module.usuario.repository.SessaoRepository;
 import com.elora.module.usuario.repository.UsuarioRepository;
 import com.elora.security.jwt.JwtService;
@@ -39,6 +41,7 @@ public class AuthService {
 
     private final UsuarioRepository usuarios;
     private final SessaoRepository sessoes;
+    private final RedefinicaoSenhaRepository redefinicoes;
     private final UsuarioService usuarioService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwt;
@@ -99,6 +102,53 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UsuarioResponse me(Integer usuarioId) {
         return usuarioService.toResponse(usuarioService.getVisivel(usuarioId));
+    }
+
+    /**
+     * REQ-ELO-002 sobre {@code redefinicao_senha} (v2.2). Sempre retorna o
+     * token opaco quando o usuário existe; quando não existe, não faz nada
+     * (resposta genérica no controller — não revela cadastros). Envio do
+     * token por e-mail/SMS é integração futura (mesmo padrão do disparo
+     * de notificações); em dev o token volta no log.
+     *
+     * @return token opaco (uso único, expira em 1h) ou null se não há usuário
+     */
+    @Transactional
+    public String requestPasswordReset(String identifier) {
+        var usuario = localizarPorIdentifier(identifier);
+        if (usuario.isEmpty()) {
+            return null;
+        }
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+
+        RedefinicaoSenha reset = new RedefinicaoSenha();
+        reset.setUsuario(usuario.get());
+        reset.setTokenHash(sha256Hex(raw));
+        reset.setExpiraEm(LocalDateTime.now().plusHours(1));
+        redefinicoes.save(reset);
+        return raw;
+    }
+
+    /**
+     * Consome o token de {@link #requestPasswordReset(String)}: marca uso,
+     * troca a senha e derruba todas as sessões (força relogin).
+     */
+    @Transactional
+    public void confirmPasswordReset(String token, String novaSenha) {
+        RedefinicaoSenha reset = redefinicoes.findByTokenHash(sha256Hex(token == null ? "" : token))
+                .orElseThrow(() -> new UnauthorizedException("Token inválido ou expirado"));
+        if (reset.getUsadoEm() != null || reset.getExpiraEm().isBefore(LocalDateTime.now())) {
+            throw new UnauthorizedException("Token inválido ou expirado");
+        }
+        Usuario usuario = usuarioService.getVisivel(reset.getUsuario().getId());
+        usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
+        usuarios.save(usuario);
+
+        reset.setUsadoEm(LocalDateTime.now());
+        redefinicoes.save(reset);
+        sessoes.deleteByUsuario_Id(usuario.getId());
     }
 
     private java.util.Optional<Usuario> localizarPorIdentifier(String identifier) {
