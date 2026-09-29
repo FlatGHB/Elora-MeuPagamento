@@ -1,12 +1,8 @@
 package com.elora.module.profissional.entity;
-
 import java.io.Serializable;
-
 import jakarta.persistence.*;
 import lombok.*;
-
-@Entity
-@Table(name = "usuario_especialidade")
+@Entity(name = "ProfissionalUsuarioEspecialidade") @Table(name="usuario_especialidade")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
