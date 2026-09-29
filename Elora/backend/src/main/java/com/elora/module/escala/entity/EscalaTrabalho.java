@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,14 @@ import java.time.LocalDate;
  * Turno = (contrato, data, periodo), único por {@code uq_escala}.
  */
 @Entity
-@Table(name = "escala_trabalho")
+@Table(
+    name = "escala_trabalho",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            columnNames = {"contrato_id", "data", "periodo"}
+        )
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -114,8 +115,7 @@ class AuthFlowTest {
     }
 
     @Test
-    void cadastroCuidadorComecaPendente() {
-        CuidadorRegisterRequest req = new CuidadorRegisterRequest();
+    void cadastroCuidadorComecaPendente() {        CuidadorRegisterRequest req = new CuidadorRegisterRequest();
         req.setNome("Ana Ferreira");
         req.setEmail("ana@teste.com");
         req.setCpf("11144477735");
@@ -131,5 +131,40 @@ class AuthFlowTest {
         // login registra ultimo_login_em (coluna v2.2)
         authService.login(new LoginRequest("ana@teste.com", "Senha@123", "CAREGIVER"), null, null);
         assertNotNull(authService.me(criado.getId()).getCriadoEm());
+    }
+
+    @Test
+    void resetSenhaTrocaSenhaEDerrubaSessao() {
+        var criado = usuarioService.registerCliente(cadastro("reset@teste.com", "52998224725"));
+        AuthResponse login = authService.login(
+                new LoginRequest("reset@teste.com", "Senha@123", "CLIENT"), "127.0.0.1", "teste");
+        assertNotNull(login.getRefreshToken());
+
+        String token = authService.requestPasswordReset("reset@teste.com");
+        assertNotNull(token);
+
+        authService.confirmPasswordReset(token, "Nova@123");
+
+        // senha antiga não entra mais; nova entra
+        assertThrows(UnauthorizedException.class, () ->
+                authService.login(new LoginRequest("reset@teste.com", "Senha@123", "CLIENT"), null, null));
+        AuthResponse relogin = authService.login(
+                new LoginRequest("reset@teste.com", "Nova@123", "CLIENT"), null, null);
+        assertEquals(criado.getId(), relogin.getUser().getId());
+
+        // refresh da sessão anterior foi derrubado
+        assertThrows(UnauthorizedException.class, () ->
+                authService.refresh(login.getRefreshToken(), null, null));
+
+        // token de uso único — reutilizar falha
+        assertThrows(UnauthorizedException.class, () ->
+                authService.confirmPasswordReset(token, "Outra@123"));
+    }
+
+    @Test
+    void resetParaInexistenteNaoRevelaNada() {
+        assertNull(authService.requestPasswordReset("fantasma@teste.com"));
+        assertThrows(UnauthorizedException.class, () ->
+                authService.confirmPasswordReset("token-qualquer", "Nova@123"));
     }
 }
